@@ -1,3 +1,5 @@
+package org.firstinspires.ftc.teamcode;
+
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -9,7 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import java.util.List;
 @TeleOp(name = "tele")
-public class Teleop extends LinearOpMode {
+public class NewTele extends LinearOpMode {
     Limelight3A limelight;
     DcMotor fl,fr,br,bl;
 
