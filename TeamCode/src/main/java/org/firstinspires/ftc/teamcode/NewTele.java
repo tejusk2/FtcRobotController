@@ -14,7 +14,7 @@ import java.util.List;
 public class NewTele extends LinearOpMode {
     Limelight3A limelight;
     DcMotor fl,fr,br,bl;
-
+    double memory = 1;
     @Override
     public void runOpMode() throws InterruptedException {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -32,8 +32,10 @@ public class NewTele extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()){
-            if(gamepad1.cross){
-                autoAdjust();
+            if(gamepad1.square){
+                if(limelight.isRunning()){
+                    autoAdjust();
+                }
             }
         }
 
@@ -43,11 +45,25 @@ public class NewTele extends LinearOpMode {
     public void autoAdjust(){
 
         double Xvalue = findSmallest();
-        while(Math.abs(Xvalue)>0){
-            fl.setPower(0.5);
-            bl.setPower(0.5);
-            fr.setPower(-0.5);
-            br.setPower(-0.5);
+        telemetry.addData("x-pos: ", Xvalue);
+        telemetry.update();
+        sleep(2000);
+        while(Math.abs(Xvalue)>0.8){
+            double mult = 0.23;
+            if(gamepad1.square){
+                break;
+            }
+            if(gamepad1.circle){
+                mult += 0.01;
+            }
+            double power = (Xvalue / Math.abs(Xvalue)) * mult;
+            fl.setPower(-power);
+            bl.setPower(-power);
+            fr.setPower(power);
+            br.setPower(power);
+
+            telemetry.addData("x-pos: ", Xvalue);
+            telemetry.update();
 
             Xvalue = findSmallest();
         }
@@ -61,19 +77,24 @@ public class NewTele extends LinearOpMode {
     }
 
     public double findSmallest(){
-        LLResult result = limelight.getLatestResult();
+        try {
+            LLResult result = limelight.getLatestResult();
 
-        int smallest = 0;
-        int i = 0;
-        List<LLResultTypes.DetectorResult> detections = result.getDetectorResults();
-        for (LLResultTypes.DetectorResult detection : detections) {
-            String className = detection.getClassName(); // What was detected
-            double x = Math.abs(detection.getTargetXDegrees()); // Where it is (left-right)
-            i ++;
-            if(Math.abs(detections.get(smallest).getTargetXDegrees()) > x){
-                smallest = i;
+            int smallest = 0;
+            int i = 0;
+            List<LLResultTypes.DetectorResult> detections = result.getDetectorResults();
+            for (LLResultTypes.DetectorResult detection : detections) {
+                String className = detection.getClassName(); // What was detected
+                double x = Math.abs(detection.getTargetXDegrees()); // Where it is (left-right)
+                i++;
+                if (Math.abs(detections.get(smallest).getTargetXDegrees()) > x) {
+                    smallest = i;
+                }
             }
+            memory = detections.get(smallest).getTargetXDegrees();
+            return memory;
+        }catch (Exception e){
+            return -memory;
         }
-        return detections.get(smallest).getTargetXDegrees();
     }
 }
