@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.experimental;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -83,9 +83,8 @@ public class NewTele extends LinearOpMode {
 
             int smallest = 0;
             int i = 0;
-            List<LLResultTypes.DetectorResult> detections = result.getDetectorResults();
-            for (LLResultTypes.DetectorResult detection : detections) {
-                String className = detection.getClassName(); // What was detected
+            List<LLResultTypes.ColorResult> detections = result.getColorResults();
+            for (LLResultTypes.ColorResult detection : detections) {
                 double x = Math.abs(detection.getTargetXDegrees()); // Where it is (left-right)
                 i++;
                 if (Math.abs(detections.get(smallest).getTargetXDegrees()) > x) {

@@ -1,4 +1,6 @@
+/*
 package org.firstinspires.ftc.teamcode;
+
 
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
@@ -11,8 +13,8 @@ import java.util.List;
 
 @Autonomous(name="Motion Profile Tester")
 public class Motion_Profile_Tester extends LinearOpMode {
-    DcMotor fl,fr,br,bl, enc_left, enc_right, enc_x;
-    //RevBlinkinLedDriver leds;
+    DcMotor fl,fr,br,bl, enc_left, enc_right, enc_x, leftSlides;
+    RevBlinkinLedDriver leds;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -21,16 +23,18 @@ public class Motion_Profile_Tester extends LinearOpMode {
         br = hardwareMap.get(DcMotor.class, "BR");
         fr = hardwareMap.get(DcMotor.class, "FR");
 
+        leftSlides = hardwareMap.get(DcMotor.class, "slides_l");
+
         enc_left = hardwareMap.get(DcMotor.class, "enc_left");
         enc_right = hardwareMap.get(DcMotor.class, "enc_right");
-        enc_x = hardwareMap.get(DcMotor.class, "enc_x");
+
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
         //intakeMotorLeft = hardwareMap.get(CRServo.class, "leftIntake");
         //intakeMotorRight = hardwareMap.get(CRServo.class, "rightIntake");
-        //leds = hardwareMap.get(RevBlinkinLedDriver.class, "leds");
+        leds = hardwareMap.get(RevBlinkinLedDriver.class, "LED");
         //limitSwitch = hardwareMap.get(TouchSensor.class, "limit");
         bl.setDirection(DcMotorSimple.Direction.REVERSE);
         br.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -39,7 +43,7 @@ public class Motion_Profile_Tester extends LinearOpMode {
         enc_right.setDirection(DcMotorSimple.Direction.REVERSE);
         enc_x.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        Robot robot = new Robot(fr, fl, br, bl, enc_left, enc_x, enc_right);
+        Robot robot = new Robot(fr, fl, br, bl, enc_left, leftSlides, leds);
         encodeReset();
 
         waitForStart();
@@ -74,7 +78,7 @@ public class Motion_Profile_Tester extends LinearOpMode {
         robot.rotateWithPID(-20);
          */
 
-
+/*
     }
     public void encodeReset(){
         enc_left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -84,3 +88,4 @@ public class Motion_Profile_Tester extends LinearOpMode {
     }
 
 }
+ */

@@ -1,28 +1,20 @@
 package org.firstinspires.ftc.teamcode;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.lang.reflect.Method;
+public class RobotDeprecated {
+    ServoImplEx OarmLeft, OarmRight, outRight, leftOut;
+    DcMotor front_right,front_left,back_left,back_right, enc_left, leftSlides, islides, rightSlides;
+    CRServo intakeMotorLeft, intakeMotorRight;
+    TouchSensor left, right, intakeLeft, intakeRight;
 
-public class Robot {
-    DcMotor fl,fr,br,bl, oSlideRight, oSlideLeft, islide;
-    Deadwheel leftX, middle, rightX;
-    ClawSubAssembly intakeArm;
-    ServoImplEx outtakeBox, outtakeArm, claw, base, wrist, joint ;
-    IMU imu;
     RevBlinkinLedDriver leds;
-    TouchSensor left, right, intakeLeft, intakeRight;    //34.1632
-    LimitSwitch oLSLeft, oLSRight, iLSLeft,iLSRight;
     ElapsedTime profileTimer = new ElapsedTime();
-    ElapsedTime transferTimer = new ElapsedTime();
     double deltaPosLeft = 0;
     double deltaPosRight = 0;
     double deltaPosPerp = 0;
@@ -39,12 +31,7 @@ public class Robot {
 
     double cycleTime = 0;
 
-    enum TransferStates {
-        ELSEWHERE,
-        TRANSFER_READY,
-        SAMPLE_DROPPED
-    }
-    Tele25.TransferStates transferState = Tele25.TransferStates.ELSEWHERE;
+
 
 
 
@@ -67,76 +54,58 @@ public class Robot {
 
     //SUBSTITUTE THIS VALUE FROM TRACK WIDTH TUNER
     public static double track_width = 10.7454843;
-    public Robot(DcMotor fr, DcMotor fl, DcMotor br, DcMotor bl,
-                 DcMotor LeftxAxis, DcMotor leftSlides, DcMotor islides, DcMotor rightSlides,
-                 RevBlinkinLedDriver leds,
-                 ServoImplEx outtakeArm, ServoImplEx outtakeBox,
-                 ServoImplEx claw, ServoImplEx base, ServoImplEx joint, ServoImplEx wrist,
-                 TouchSensor left, TouchSensor right, TouchSensor iLeft, TouchSensor iRight, Limelight3A limelight) {
-        this.fr = fr;
-        this.fl = fl;
-        this.br = br;
-        this.bl = bl;
-
-        this.oSlideLeft = leftSlides;
+    public RobotDeprecated(DcMotor rightFront, DcMotor leftFront, DcMotor rightRear, DcMotor leftRear,
+                           DcMotor LeftxAxis, DcMotor leftSlides, DcMotor islides, DcMotor rightSlides,
+                           RevBlinkinLedDriver leds,
+                           ServoImplEx  OarmLeft, ServoImplEx OarmRight, ServoImplEx outRight, ServoImplEx leftOut, ServoImplEx rightIntake, ServoImplEx leftIntake,
+                           TouchSensor left, TouchSensor right,
+                           CRServo intakeMotorLeft, CRServo intakeMotorRight) {
+        this.front_right = rightFront;
+        this.front_left = leftFront;
+        this.back_right = rightRear;
+        this.back_left = leftRear;
+        this.leftSlides = leftSlides;
         this.leds = leds;
-
-        this.outtakeArm = outtakeArm;
-        this.outtakeBox = outtakeBox;
-
-        this.islide = islides;
-        this.oSlideRight = rightSlides;
-
+        this.OarmLeft = OarmLeft;
+        this.OarmRight = OarmRight;
+        this.outRight = outRight;
+        this.leftOut = leftOut;
         this.left = left;
         this.right = right;
-        this.intakeLeft = iLeft;
-        this.intakeRight = iRight;
+        this.islides = islides;
+        this.rightSlides = rightSlides;
+        this.intakeMotorLeft = intakeMotorLeft;
+        this.intakeMotorRight = intakeMotorRight;
 
-        oLSLeft = new LimitSwitch(left);
-        oLSRight = new LimitSwitch(right);
-        iLSLeft = new LimitSwitch(intakeLeft);
-        iLSRight = new LimitSwitch(intakeRight);
+        //enc right = BR
+        //enc perp = slides_l
+        this.enc_left = LeftxAxis;
+        //this.leds = lights;
 
-
-        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
-        limelight.start(); // This tells Limelight to start looking!
-        limelight.pipelineSwitch(2); // Switch to pipeline number 1
-        this.claw = claw;
-        this.wrist = wrist;
-        this.base  = base;
-        this.joint = joint;
-        intakeArm = new ClawSubAssembly(limelight, base, joint, wrist, claw);
-
-
-        LeftxAxis.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftX = new Deadwheel(LeftxAxis);
-        rightX = new Deadwheel(br);
-        middle = new Deadwheel(leftSlides);
-
-
-
-        br.setDirection(DcMotorSimple.Direction.REVERSE);
+        //this.leftSlides.setDirection(DcMotorSimple.Direction.REVERSE);
+        //back_left.setDirection(DcMotorSimple.Direction.REVERSE);
+        back_right.setDirection(DcMotorSimple.Direction.REVERSE);
+        //front_left.setDirection(DcMotorSimple.Direction.REVERSE);
+        enc_left.setDirection(DcMotorSimple.Direction.REVERSE);
         rightSlides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
 
     }
     public void timedCreep(double seconds, double power){
         ElapsedTime runTimer = new ElapsedTime();
         runTimer.reset();
         while(runTimer.seconds() < seconds){
-            fr.setPower(power);
-            bl.setPower(power);
-            br.setPower(power);
-            fl.setPower(power);
+            front_right.setPower(power);
+            back_left.setPower(power);
+            back_right.setPower(power);
+            front_left.setPower(power);
         }
-        fr.setPower(0);
-        bl.setPower(0);
-        br.setPower(0);
-        fl.setPower(0);
+        front_right.setPower(0);
+        back_left.setPower(0);
+        back_right.setPower(0);
+        front_left.setPower(0);
     }
-    public void motionProfile(double x, double y, double fix_time){
+    public void motionProfile(double x, double y){
         resetOdo();
         double accel_time = max_velo / max_accel;
         double accel_distance = 0.5*max_accel*(Math.pow(accel_time,2));
@@ -180,14 +149,14 @@ public class Robot {
                 }
 
             }
-            fr.setPower(0);
-            bl.setPower(0);
-            br.setPower(0);
-            fl.setPower(0);
+            front_right.setPower(0);
+            back_left.setPower(0);
+            back_right.setPower(0);
+            front_left.setPower(0);
         }
         if(accel_distance < halfway){
             profileTimer.reset();
-            while(profileTimer.seconds() < total_time + fix_time){
+            while(profileTimer.seconds() < total_time + 0.5){
                 //ACCEL
                 arcLocalizationApprox();
                 if(profileTimer.seconds() < accel_time){
@@ -210,10 +179,10 @@ public class Robot {
                     motionPid(profile_dist, errIntegralSum,kIl, kPl,theta);
                 }
             }
-            fr.setPower(0);
-            bl.setPower(0);
-            br.setPower(0);
-            fl.setPower(0);
+            front_right.setPower(0);
+            back_left.setPower(0);
+            back_right.setPower(0);
+            front_left.setPower(0);
 
         }
 
@@ -238,18 +207,18 @@ public class Robot {
         double proportional = posError * kPl;
         double pidOutput = (integral + proportional) / 100;
 
-        fr.setPower((equationOne * pidOutput) + headingPIDOutput);
-        bl.setPower((equationOne * pidOutput) - headingPIDOutput);
-        br.setPower((equationTwo * pidOutput) + headingPIDOutput);
-        fl.setPower((equationTwo * pidOutput) - headingPIDOutput);
+        front_right.setPower((equationOne * pidOutput) + headingPIDOutput);
+        back_left.setPower((equationOne * pidOutput) - headingPIDOutput);
+        back_right.setPower((equationTwo * pidOutput) + headingPIDOutput);
+        front_left.setPower((equationTwo * pidOutput) - headingPIDOutput);
 
 
         cycleTime = profileTimer.seconds();
     }
     public void arcLocalizationApprox(){
-        x_pos =inchespertickX*(leftX.getCurrentPosition()+rightX.getCurrentPosition())/2;
-        y_pos = middle.getCurrentPosition()*inchespertickY;
-        heading = ((rightX.getCurrentPosition()*inchespertickX) - (inchespertickX*leftX.getCurrentPosition())) / track_width;
+        x_pos =inchespertickX*(enc_left.getCurrentPosition()+back_right.getCurrentPosition())/2;
+        y_pos = leftSlides.getCurrentPosition()*inchespertickY;
+        heading = ((back_right.getCurrentPosition()*inchespertickX) - (inchespertickX*enc_left.getCurrentPosition())) / track_width;
     }
     public double joystickNormalize(double theta){
         theta = (theta >= 0 && theta < Math.toRadians(270)) ? (-1 * theta) + Math.toRadians(90) : (-1 * theta) + Math.toRadians(450);
@@ -311,15 +280,19 @@ public class Robot {
         resetOdo();
     }
     public void turn(double power){
-        br.setPower(power);
-        bl.setPower(-power);
-        fl.setPower(-power);
-        fr.setPower(power);
+        back_right.setPower(power);
+        back_left.setPower(-power);
+        front_left.setPower(-power);
+        front_right.setPower(power);
+        //arcLocalizationApprox();
     }
     public void resetOdo(){
-        leftX.reset();
-        rightX.reset();
-        middle.reset();
+        enc_left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        back_right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        back_right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        leftSlides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftSlides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         x_pos = 0;
         y_pos = 0;
@@ -327,108 +300,78 @@ public class Robot {
     }
 
 
-    public void slidesLimiterIntake(double power, int upperBound){
-        if((islide.getCurrentPosition() > upperBound && power > 0) || (intakeDocked() && power < 0)) {
-            islide.setPower(0);
-        } else{
-            islide.setPower(power);
-        }
-    }
-    public void setIntakeSlides(int reference) {
-       double output = 1;
-       int k = 0;
-       ElapsedTime runTimer = new ElapsedTime();
-       runTimer.reset();
-       while(output > 0.05+k) {
-           if(runTimer.seconds() > 3){break;}
-           int kP = 1;
-           int error = reference - islide.getCurrentPosition();
-           output = ((error / 100) + k)*kP;
-           slidesLimiterIntake(output, 1300);
-       }
-    }
-    public void homeIntake(){
-        while(!intakeDocked()){
-            slidesLimiterIntake(-0.9, 1000);
-        }
-    }
-    public void homeOuttake(){
-        while(!outtakeDocked()){
-            slidesLimiterOutake(-0.9, 1300);
-        }
-    }
-    public void setOuttakeSlides(int reference) {
-        double output = 1;
-        int k = 0;
-        ElapsedTime runTimer = new ElapsedTime();
-        runTimer.reset();
-        while(output > 0.05+k) {
-            if(runTimer.seconds() > 3){break;}
-            int kP = 1;
-            int error = reference - -1*oSlideRight.getCurrentPosition();
-            output = ((error / 100) + k)*kP;
-            slidesLimiterOutake(output, 1000);
-        }
 
-    }
-    public void slidesLimiterOutake(double power, int upperBound) {
-        if ((-oSlideRight.getCurrentPosition() > upperBound && power > 0) && (outtakeDocked() && power < 0)){
-            oSlideRight.setPower(0);
-            oSlideLeft.setPower(0);
+
+    public void slidesLimiterOutake(double power, int upperBound, int lowerBound) {
+        if ((-rightSlides.getCurrentPosition() > upperBound && power > 0) || (((!left.isPressed() && power < 0) && (!right.isPressed() && power < 0))) || (-rightSlides.getCurrentPosition() < 0 && power < 0)) {
+            rightSlides.setPower(0);
+            leftSlides.setPower(0);
 
         } else {
-            oSlideLeft.setPower(power);
-            oSlideRight.setPower(-power);
+            leftSlides.setPower(power);
+            rightSlides.setPower(-power);
 
         }
     }
-    public void transfer() {
-
-    }
-    public boolean intakeDocked(){
-        if((iLSLeft.isPressed() && iLSRight.isPressed()) || islide.getCurrentPosition() <= 0){
-            islide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            islide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            return true;
-        }else{
-            return false;
-        }
-    }
-    public boolean outtakeDocked(){
-        if((oLSRight.isPressed() && oLSLeft.isPressed()) || -oSlideRight.getCurrentPosition() <= 0){
-            oSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            oSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            return true;
-        }else{
-            return false;
-        }
+    public void slides(double power){
+        leftSlides.setPower(power);
+        rightSlides.setPower(-power);
     }
 
-    /*
-    public void delayedFunc(double delay, ){
+    public void specimenDropoffPosition(int pos){
+
+            ElapsedTime timer = new ElapsedTime();
+            timer.reset();
+            while (timer.seconds() < 1.5) {
+                //bring our outtake up
+                slidesLimiterOutake(0.8, pos, 0);
+                if(operating.isInterrupted()){
+                    break;
+                }
+                if (rightSlides.getPower() == 0) {
+                    break;
+                }
+            }
+
 
     }
-     */
 
-
-    //SERVO_POSES
     public void setOUTTAKE_ARM_DOWN(){
-        outtakeArm.setPosition(0);
+        OarmRight.setPosition(0.00);
+        OarmLeft.setPosition(0.00);
     }
     public void setOUTTAKE_ARM_UP(){
-        outtakeArm.setPosition(1);
-    }
-    public void setOUTTAKE_ARM_MIDDLE(){
-        outtakeArm.setPosition(0.4);
+        OarmRight.setPosition(1);
+        OarmLeft.setPosition(1);
     }
     public void setOUTTAKE_TRANSFER(){
-        outtakeBox.setPosition(0.3);
+        outRight.setPosition(0.3);
+        leftOut.setPosition(0.3);
     }
     public void setOUTTAKE_SPECIMEN(){
-        outtakeBox.setPosition(1);
+        outRight.setPosition(1);
+        leftOut.setPosition(1);
     }
     public void setOUTTAKE_DROP(){
-        outtakeBox.setPosition(0);
+        outRight.setPosition(0);
+        leftOut.setPosition(0);
+    }
+    public void disablePWMOuttakeBox(){
+        outRight.setPwmDisable();
+        leftOut.setPwmDisable();
+    }
+    public void disablePWMOuttakeArm(){
+        OarmRight.setPwmDisable();
+        OarmLeft.setPwmDisable();
+    }
+    //ENABLE
+    public void enablePWMOuttakeBox(){
+        outRight.setPwmEnable();
+        leftOut.setPwmEnable();
+    }
+    public void enablePWMOuttakeArm(){
+        OarmRight.setPwmEnable();
+        OarmLeft.setPwmEnable();
     }
 
 

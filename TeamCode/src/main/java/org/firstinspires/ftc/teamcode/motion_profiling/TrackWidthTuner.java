@@ -1,33 +1,28 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.motion_profiling;
 
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.RobotDeprecated;
 
 import java.util.List;
 
+@TeleOp(name="track width tuner")
+public class TrackWidthTuner extends LinearOpMode {
 
-@TeleOp(name="max velocity tuner")
-public class Max_Velo extends LinearOpMode {
-
-    //USE THIS TO FIND MAX VELOCITY
-
-    IMU imu;
     DcMotor back_right, back_left, front_right, front_left, enc_x, enc_right, enc_left;
 
-    private double inchespertickX = Robot.inchespertickX;
-    private double inchespertickY = Robot.inchespertickY;
+    private double inchespertickX = RobotDeprecated.inchespertickX;
+    private double inchespertickY = RobotDeprecated.inchespertickY;
 
     int i = 1;
+
+    //THIS PROGRAM WILL ATTEMPT TO TURN 90 DEGREES
+    //TUNE THE TRACK WIDTH TO MAKE IT TURN 90
+
     @Override
     public void runOpMode() throws InterruptedException {
         back_right = hardwareMap.get(DcMotor.class,"BR");
@@ -55,48 +50,46 @@ public class Max_Velo extends LinearOpMode {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        waitForStart();
+        double track_width = 10.7445843;
         encodeReset();
-        ElapsedTime timer = new ElapsedTime();
-        timer.reset();
-        int prev_right=0;
-        int prev_left=0;
-        double start_time = 0;
-        double end_time = 0;
-        double velo = 0;
+        waitForStart();
+
         while(opModeIsActive()){
-            while(timer.seconds() < 1.5){
+            double theta = ((enc_left.getCurrentPosition()*inchespertickX) - (enc_right.getCurrentPosition()*inchespertickX)) / track_width;
+            while(Math.abs(Math.toDegrees(theta)) < 90*i){
+
+                telemetry.addData("predicted total change in heading: ", Math.toDegrees(theta));
+                telemetry.addData("track width: ", track_width);
                 telemetry.addData("encoder right: ", enc_right.getCurrentPosition());
                 telemetry.addData("encoder left: ", enc_left.getCurrentPosition());
                 telemetry.update();
 
-                back_right.setPower(1);
-                back_left.setPower(1);
-                front_left.setPower(1);
-                front_right.setPower(1);
-
-                if(timer.seconds() > 0.5 && prev_left== 0){
-                    prev_left = enc_left.getCurrentPosition();
-                    prev_right = enc_right.getCurrentPosition();
-                    start_time = timer.seconds();
-                }
-                if(timer.seconds() > 1 && end_time== 0){
-
-                    end_time = timer.seconds();
-                    double currentPos = (enc_left.getCurrentPosition() + enc_right.getCurrentPosition())/2;
-                    double startPos = (prev_left + prev_right)/2;
-                    velo = (currentPos - startPos) / (end_time - start_time);
-                }
+                back_right.setPower(-0.2);
+                back_left.setPower(0.2);
+                front_left.setPower(0.2);
+                front_right.setPower(-0.2);
+                theta = ((enc_left.getCurrentPosition()*inchespertickX) - (enc_right.getCurrentPosition()*inchespertickX)) / track_width;
             }
-            telemetry.addData("max_velo: ", velo);
-            telemetry.update();
             back_right.setPower(0);
             back_left.setPower(0);
             front_left.setPower(0);
             front_right.setPower(0);
-
-            sleep(6000);
-
+            while(true){
+                if(gamepad1.cross){
+                    i+=1;
+                    break;
+                }
+                if(gamepad1.circle){
+                    track_width += 0.01;
+                    sleep(100);
+                }
+                if(gamepad1.square){
+                    track_width -= 0.01;
+                    sleep(100);
+                }
+                telemetry.addData("track_width: ", track_width);
+                telemetry.update();
+            }
 
         }
 
