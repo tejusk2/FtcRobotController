@@ -57,8 +57,8 @@ public class IntakeFixer extends LinearOpMode {
         wrist.setPosition(0);
         claw.setPosition(0);
 
-        outtakeBox.setPosition(0.3);
-        outtakeArm.setPosition(0);
+        outtakeBox.setPosition(0);
+        outtakeArm.setPosition(0.225);
 
         while(opModeIsActive()){
             telemetry.addData("base: ", base.getPosition());
@@ -119,7 +119,7 @@ public class IntakeFixer extends LinearOpMode {
                 sleep(200);
             }
             //claw
-            claw.setPosition(gamepad1.right_trigger);
+            claw.setPosition(0.5 - gamepad1.right_trigger);
 
             //wrist.setPosition(gamepad1.right_stick_x);
             if(gamepad1.square){

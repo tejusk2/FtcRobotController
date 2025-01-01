@@ -11,11 +11,12 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.Callable;
 
 public class Robot {
     DcMotor fl,fr,br,bl, oSlideRight, oSlideLeft, islide;
     Deadwheel leftX, middle, rightX;
-    ClawSubAssembly intakeArm;
+    public ClawSubAssembly intakeArm;
     ServoImplEx outtakeBox, outtakeArm, claw, base, wrist, joint ;
     IMU imu;
     RevBlinkinLedDriver leds;
@@ -23,6 +24,7 @@ public class Robot {
     LimitSwitch oLSLeft, oLSRight, iLSLeft,iLSRight;
     ElapsedTime profileTimer = new ElapsedTime();
     ElapsedTime transferTimer = new ElapsedTime();
+    Limelight3A limelight;
     double deltaPosLeft = 0;
     double deltaPosRight = 0;
     double deltaPosPerp = 0;
@@ -96,11 +98,12 @@ public class Robot {
         oLSRight = new LimitSwitch(right);
         iLSLeft = new LimitSwitch(intakeLeft);
         iLSRight = new LimitSwitch(intakeRight);
-
-
+        this.limelight = limelight;
+        /*
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
         limelight.pipelineSwitch(2); // Switch to pipeline number 1
+         */
         this.claw = claw;
         this.wrist = wrist;
         this.base  = base;
@@ -164,17 +167,23 @@ public class Robot {
                 //ACCELERATION
                 arcLocalizationApprox();
                 if(profileTimer.seconds() < accel_time){
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    if(leds!=null){
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    }
                     profile_dist = 0.5*max_accel*(Math.pow(profileTimer.seconds(), 2));
                     motionPid(profile_dist, errIntegralSum, kIl, kPl, theta);
                     //DECELERATION
                 }else if(profileTimer.seconds() < total_time){
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                    }
                     profile_dist = halfway + (adjusted_max_velo*(profileTimer.seconds()-accel_time)) - (0.5*max_accel*(Math.pow((profileTimer.seconds()-accel_time), 2)));
                     motionPid(profile_dist, errIntegralSum,kIl, kPl, theta);
                     //POSITION LOCK
                 }else{
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                    }
                     profile_dist = total_dist;
                     motionPid(profile_dist, errIntegralSum,kIl, kPl, theta);
                 }
@@ -191,21 +200,29 @@ public class Robot {
                 //ACCEL
                 arcLocalizationApprox();
                 if(profileTimer.seconds() < accel_time){
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    }
                     profile_dist = 0.5*max_accel*(Math.pow(profileTimer.seconds(), 2));
                     motionPid(profile_dist, errIntegralSum,kIl, kPl,theta);
                     //CRUISE
                 }else if(profileTimer.seconds() < accel_time + cruise_time){
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
+                    }
                     profile_dist = accel_distance + (max_velo*(profileTimer.seconds()-accel_time));
                     motionPid(profile_dist, errIntegralSum,kIl, kPl,theta);
                     //DECELERATE
                 }else if(profileTimer.seconds() < total_time){
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                    }
                     profile_dist = accel_distance + (max_velo*(profileTimer.seconds()-accel_time)) - (0.5*max_accel*(Math.pow((profileTimer.seconds()-(accel_time+cruise_time)), 2)));
                     motionPid(profile_dist, errIntegralSum,kIl, kPl,theta);
                 }else{
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                    }
                     profile_dist = total_dist;
                     motionPid(profile_dist, errIntegralSum,kIl, kPl,theta);
                 }
@@ -300,7 +317,9 @@ public class Robot {
         ElapsedTime rotateTimer = new ElapsedTime();
         rotateTimer.reset();
         while(rotateTimer.seconds() < 1.5){
-            leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.WHITE);
+            if(leds!=null) {
+                leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.WHITE);
+            }
             double power = rotationalPID(deltaTheta, 2, 1, 0);
             if(power == 0){
                 break;
@@ -383,6 +402,29 @@ public class Robot {
         }
     }
     public void transfer() {
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+        while(!intakeDocked() && timer.seconds() < 3){
+            homeIntake();
+        }
+        while(!outtakeDocked() && timer.seconds() < 3){
+            homeOuttake();
+        }
+        if(intakeDocked() && outtakeDocked()){
+            intakeArm.setINTAKE_TRANSFER();
+            setOUTTAKE_ARM_TRANSFER();
+            setOUTTAKE_TRANSFER();
+            timer.reset();
+            while(timer.seconds() < 0.75){
+                continue;
+            }
+            intakeArm.openClaw();
+            timer.reset();
+            while(timer.seconds() < 0.5){
+                continue;
+            }
+            intakeArm.setINTAKE_SCAN();
+        }
 
     }
     public boolean intakeDocked(){
@@ -404,11 +446,18 @@ public class Robot {
         }
     }
 
-    /*
-    public void delayedFunc(double delay, ){
 
+    public void delayedFunc(double delay, Runnable function){
+        new Thread(()->{
+            ElapsedTime timer = new ElapsedTime();
+            timer.reset();
+            while(timer.seconds() <= delay){
+                continue;
+            }
+            function.run();
+        }).start();
     }
-     */
+
 
 
     //SERVO_POSES
@@ -418,11 +467,14 @@ public class Robot {
     public void setOUTTAKE_ARM_UP(){
         outtakeArm.setPosition(1);
     }
+    public void setOUTTAKE_ARM_TRANSFER(){
+        outtakeArm.setPosition(0.225);
+    }
     public void setOUTTAKE_ARM_MIDDLE(){
         outtakeArm.setPosition(0.4);
     }
     public void setOUTTAKE_TRANSFER(){
-        outtakeBox.setPosition(0.3);
+        outtakeBox.setPosition(0.025);
     }
     public void setOUTTAKE_SPECIMEN(){
         outtakeBox.setPosition(1);

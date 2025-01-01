@@ -6,17 +6,25 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.opencv.core.Mat;
+
 import java.util.List;
 
 public class ClawSubAssembly {
     Limelight3A limelight;
-    Servo base, joint, wrist, claw;
+    public Servo base, joint, wrist, claw;
     public ClawSubAssembly(Limelight3A limelight, Servo base, Servo joint, Servo wrist, Servo claw){
         this.limelight = limelight;
         this.base = base;
         this.joint = joint;
         this.wrist = wrist;
         this.claw = claw;
+        /*
+        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+        limelight.start(); // This tells Limelight to start looking
+        limelight.pipelineSwitch(2); // Switch to pipeline number 2
+         */
+
     }
     public void autoAdjust(){
         ElapsedTime runtimer = new ElapsedTime();
@@ -40,9 +48,9 @@ public class ClawSubAssembly {
                 sleep(30);
             }
             if (runtimer.seconds() < 1.8) {
-                wrist.setPosition(smallestI - 0.2);
-                joint.setPosition(0.8);
-                base.setPosition(0.175);
+                wrist.setPosition(smallestI-0.25);
+                sleep(100);
+                setINTAKE_Middle();
             }
             break;
         }
@@ -75,6 +83,35 @@ public class ClawSubAssembly {
             return 0;
         }
     }
+    public boolean linedUp(){
+        try {
+            LLResult result = limelight.getLatestResult();
+
+            int smallest = 0;
+            int i = 0;
+            List<LLResultTypes.DetectorResult> detections = result.getDetectorResults();
+
+            for (LLResultTypes.DetectorResult detection : detections) {
+                double x = Math.abs(detection.getTargetXDegrees()); // Where it is (left-right)
+                String classname = detection.getClassName();
+
+                i++;
+                if (Math.abs(detections.get(smallest).getTargetXDegrees()) > x) {
+                    smallest = i;
+                }
+
+            }
+
+            double centerX = result.getTx();
+            if(Math.abs(centerX) < 15){
+                return true;
+            }else{
+                return false;
+            }
+        }catch (Exception e){
+            return false;
+        }
+    }
     public void sleep(int milliseconds){
         ElapsedTime sleepTimer = new ElapsedTime();
         sleepTimer.reset();
@@ -83,25 +120,38 @@ public class ClawSubAssembly {
         }
     }
     public void setINTAKE_SCAN(){
-        base.setPosition(0.3);
-        joint.setPosition(0.9);
+        base.setPosition(0.4);
+        joint.setPosition(0.95);
         wrist.setPosition(0);
-        claw.setPosition(0);
+        claw.setPosition(0.5);
     }
     public void setINTAKE_TRANSFER(){
         wrist.setPosition(0);
-        joint.setPosition(0.5);
-        base.setPosition(0.5);
+        joint.setPosition(0);
+        base.setPosition(0.31);
     }
     public void setINTAKE_PICKUP(){
+        joint.setPosition(0.94);
+        base.setPosition(0.2);
+        openClaw();
+    }
+    public void setINTAKE_Middle(){
+        joint.setPosition(0.94);
+        base.setPosition(0.26);
+        openClaw();
+    }
+    public void setINTAKE_WALL(){
         wrist.setPosition(0);
-        joint.setPosition(0.8);
-        base.setPosition(0.175);
+        joint.setPosition(0.75);
+        base.setPosition(0.5);
+        openClaw();
     }
+
     public void closeClaw(){
-        claw.setPosition(1);
-    }
-    public void openClaw(){
         claw.setPosition(0);
     }
+    public void openClaw(){
+        claw.setPosition(0.5);
+    }
+
 }

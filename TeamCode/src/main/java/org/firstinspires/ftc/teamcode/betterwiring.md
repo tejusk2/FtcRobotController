@@ -7,6 +7,7 @@
 ###--Servos--
 0 - "outtakeBox" - outtake box servo
 1 - "outtakeArm" - outtake arm servo
+2 - "claw" - grabber for intake arm
 ###--Digital--
 01 - "inLeft" - left limit switch for horizontal slides
 23 - "left" - left limit switch for vertical slides
@@ -24,4 +25,3 @@
 0 - "wrist" - spin for intake arm
 1 - "joint" - pivot for intake arm
 2 - "base" - base servo for intake arm
-3 - "claw" - grabber for intake arm

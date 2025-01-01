@@ -72,10 +72,9 @@ public class Tele25 extends LinearOpMode {
         outtakeArm = hardwareMap.get(ServoImplEx.class, "outtakeArm");
         outtakeBox = hardwareMap.get(ServoImplEx.class, "outtakeBox");
 
+
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
-        limelight.start(); // This tells Limelight to start looking
-        limelight.pipelineSwitch(2); // Switch to pipeline number 2
+
 
 
         base = hardwareMap.get(ServoImplEx.class, "base");
@@ -124,14 +123,14 @@ public class Tele25 extends LinearOpMode {
         }
 
         //Leds
-        leds = hardwareMap.get(RevBlinkinLedDriver.class, "LED");
+        //leds = hardwareMap.get(RevBlinkinLedDriver.class, "LED");
 
         br.setDirection(DcMotorSimple.Direction.REVERSE);
         fl.setDirection(DcMotorSimple.Direction.REVERSE);
 
 
         waitForStart();
-
+        intakeArm.setINTAKE_SCAN();
         while (opModeIsActive()){
             //chassis state machine
             switch(drivingState){
@@ -147,10 +146,12 @@ public class Tele25 extends LinearOpMode {
             //Subassembly state machine
             switch(subState){
                 case INTAKE:
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                    }
                     //freeze outtake subsystems
-                    slidesLimiterOutake(-1, 1000);
-                    setOUTTAKE_ARM_DOWN();
+                    //slidesLimiterOutake(-1, 1000);
+                    setOUTTAKE_ARM_TRANSFER();
                     setOUTTAKE_TRANSFER();
                     //run intake subsystems
                     slidesLimiterIntake(gamepad2.left_stick_y, 1300);
@@ -158,9 +159,12 @@ public class Tele25 extends LinearOpMode {
                     gp2();
                     break;
                 case OUTAKE:
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    }
                     //freeze intake subsystems
                     intakeArm.setINTAKE_SCAN();
+                    setOUTTAKE_ARM_UP();
                     slidesLimiterIntake(-1, 1000);
                     //run outtake subsystems
                     slidesLimiterOutake(-gamepad2.left_stick_y, 1000);
@@ -168,11 +172,15 @@ public class Tele25 extends LinearOpMode {
                     gp2();
                     break;
                 case TRANSFER_FAILED:
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                    }
                     gp2();
                     break;
                 case TRANSFER:
-                    leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
+                    if(leds!=null) {
+                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
+                    }
                     gp2();
                     transfer();
                     break;
@@ -285,7 +293,10 @@ public class Tele25 extends LinearOpMode {
         }
         //circle scan
         if(gamepad2.circle){
-
+            intakeArm.autoAdjust();
+        }
+        if(gamepad2.touchpad){
+            intakeArm.setINTAKE_WALL();
         }
         if(gamepad2.dpad_up){
             intakeArm.setINTAKE_SCAN();
@@ -301,8 +312,6 @@ public class Tele25 extends LinearOpMode {
             resetRuntime();
             wrist.setPosition(wrist.getPosition()-0.1);
         }
-        //swivel wrist
-
     }
     //Outtake box stuff
     public void outakeBox(){
@@ -362,13 +371,8 @@ public class Tele25 extends LinearOpMode {
                             intakeArm.setINTAKE_SCAN();
                             //wait 0.3 seconds
                             //go to outtake mode
-                            if (getRuntime() > 1.3) {
-                                setOUTTAKE_ARM_UP();
-                                setOUTTAKE_SPECIMEN();
-                                //switch to outtake mode
-                                transferState = TransferStates.ELSEWHERE;
-                                subState = SubAssemblyStates.OUTAKE;
-                            }
+                            transferState = TransferStates.ELSEWHERE;
+                            subState = SubAssemblyStates.OUTAKE;
                         }
                     }
                 } else {
@@ -405,8 +409,11 @@ public class Tele25 extends LinearOpMode {
     public void setOUTTAKE_ARM_UP(){
         outtakeArm.setPosition(1);
     }
+    public void setOUTTAKE_ARM_TRANSFER(){
+        outtakeArm.setPosition(0.225);
+    }
     public void setOUTTAKE_TRANSFER(){
-        outtakeBox.setPosition(0.3);
+        outtakeBox.setPosition(0);
     }
     public void setOUTTAKE_SPECIMEN(){
         outtakeBox.setPosition(1);
