@@ -29,7 +29,7 @@ public class BasketSide extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        //limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
         base = hardwareMap.get(ServoImplEx.class, "base");
         joint = hardwareMap.get(ServoImplEx.class, "joint");
         wrist = hardwareMap.get(ServoImplEx.class, "wrist");
@@ -87,55 +87,100 @@ public class BasketSide extends LinearOpMode {
         while (opModeInInit()){
             robot.setOUTTAKE_ARM_MIDDLE();
             robot.setOUTTAKE_DROP();
-            robot.intakeArm.setINTAKE_SCAN();
         }
 
         waitForStart();
+        robot.intakeArm.setINTAKE_SCAN();
+        robot.motionProfile(-15,0,1);
+        robot.motionProfile(15,0,1);
+        robot.timedCreep(1, -0.4);
+        //robot.setOUTTAKE_ARM_UP();
+        //robot.setOUTTAKE_SPECIMEN();
 
         //Drop off preload
-        robot.motionProfile(-15, 8, 0.5);
-        robot.setOUTTAKE_ARM_UP();
+
+        /*
+        robot.delayedFunc(1, ()->{
+            robot.setOuttakeSlides(3300);
+        });
+
+
+
+        robot.motionProfile(-27, 13.5, 1);
+        sleep(1000);
+        robot.setOUTTAKE_DROP();
         sleep(3000);
+        robot.setOUTTAKE_SPECIMEN();
+
+        robot.delayedFunc(0, ()->{
+            robot.homeOuttake();
+        });
+        robot.setOUTTAKE_TRANSFER();
+        robot.setOUTTAKE_ARM_TRANSFER();
+        robot.motionProfile(27, -13.5, 1);
+        robot.timedCreep(2, -0.4);
+
+         */
+
+        /*
         robot.setOUTTAKE_ARM_TRANSFER();
 
+
         //Pickup and drop off first
-        robot.motionProfile(9.75, 14, 0.5);
+        robot.motionProfile(17.25, 9.5, 0.5);
         robot.intakeArm.setINTAKE_PICKUP();
         sleep(500);
         robot.intakeArm.closeClaw();
         sleep(300);
-        robot.delayedFunc(0, ()->{robot.transfer();});
-        robot.motionProfile(-10, -14, 0.5);
-        robot.setOUTTAKE_ARM_UP();
-        sleep(3000);
+        robot.delayedFunc(0, ()->{
+            robot.transfer();
+            robot.setOUTTAKE_ARM_UP();
+            robot.setOUTTAKE_SPECIMEN();
+        ;});
+
+        robot.motionProfile(-19, -14, 0.5);
+        robot.setOUTTAKE_DROP();
+        sleep(3050);
+        robot.setOUTTAKE_SPECIMEN();
         robot.setOUTTAKE_ARM_TRANSFER();
 
         //pickup and drop off second
-        robot.motionProfile(5, 14, 0.5);
+        robot.motionProfile(9, 14, 0.5);
         robot.intakeArm.setINTAKE_PICKUP();
         sleep(500);
         robot.intakeArm.closeClaw();
         sleep(300);
-        robot.delayedFunc(0, ()->{robot.transfer();});
-        robot.motionProfile(-5, -14, 0.5);
-        robot.setOUTTAKE_ARM_UP();
+        robot.delayedFunc(0, ()->{
+            robot.transfer();
+            robot.setOUTTAKE_ARM_UP();
+            robot.setOUTTAKE_SPECIMEN();
+        });
+        robot.motionProfile(9, -14, 0.5);
+        robot.setOUTTAKE_DROP();
         sleep(3000);
+        robot.setOUTTAKE_SPECIMEN();
         robot.setOUTTAKE_ARM_TRANSFER();
 
         //pickup and drop off third
-        robot.motionProfile(3, 4, 0.5);
+        robot.motionProfile(9, 4, 0.5);
         robot.rotateWithPID(45);
         robot.intakeArm.wrist.setPosition(0.2);
-        robot.motionProfile(5.5, 8.5, 0.5);
+        robot.motionProfile(12.5, 10.5, 0.5);
         robot.intakeArm.setINTAKE_PICKUP();
         sleep(500);
         robot.intakeArm.closeClaw();
         sleep(300);
-        robot.delayedFunc(0, ()->{robot.transfer();});
+        robot.delayedFunc(0, ()->{
+            robot.transfer();
+            robot.setOUTTAKE_ARM_UP();
+            robot.setOUTTAKE_SPECIMEN();
+        });
         robot.rotateWithPID(-45);
-        robot.motionProfile(-5.5, -8.5, 0.5);
-        robot.setOUTTAKE_ARM_UP();
+        robot.motionProfile(-14.5, -8.5, 0.5);
+        robot.setOUTTAKE_DROP();
         sleep(3000);
+        robot.setOUTTAKE_SPECIMEN();
+         */
 
 
 

@@ -19,11 +19,14 @@ public class ClawSubAssembly {
         this.joint = joint;
         this.wrist = wrist;
         this.claw = claw;
-        /*
-        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
-        limelight.start(); // This tells Limelight to start looking
-        limelight.pipelineSwitch(2); // Switch to pipeline number 2
-         */
+        try {
+            limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+            limelight.start(); // This tells Limelight to start looking
+            limelight.pipelineSwitch(2); // Switch to pipeline number 2
+        }catch (Exception e){
+
+        }
+
 
     }
     public void autoAdjust(){
@@ -123,16 +126,15 @@ public class ClawSubAssembly {
         base.setPosition(0.4);
         joint.setPosition(0.95);
         wrist.setPosition(0);
-        claw.setPosition(0.5);
     }
     public void setINTAKE_TRANSFER(){
         wrist.setPosition(0);
         joint.setPosition(0);
-        base.setPosition(0.31);
+        base.setPosition(0.25);
     }
     public void setINTAKE_PICKUP(){
-        joint.setPosition(0.94);
-        base.setPosition(0.2);
+        joint.setPosition(0.925);
+        base.setPosition(0.16);
         openClaw();
     }
     public void setINTAKE_Middle(){
@@ -146,12 +148,17 @@ public class ClawSubAssembly {
         base.setPosition(0.5);
         openClaw();
     }
+    public void setINTAKE_WALL_UP(){
+        wrist.setPosition(0);
+        joint.setPosition(0.50);
+        base.setPosition(0.5);
+    }
 
     public void closeClaw(){
         claw.setPosition(0);
     }
     public void openClaw(){
-        claw.setPosition(0.5);
+        claw.setPosition(0.7);
     }
 
 }

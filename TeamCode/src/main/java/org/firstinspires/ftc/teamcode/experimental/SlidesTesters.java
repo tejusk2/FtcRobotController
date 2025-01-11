@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.experimental;
 
 import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -20,6 +20,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.ClawSubAssembly;
+import org.firstinspires.ftc.teamcode.Deadwheel;
+import org.firstinspires.ftc.teamcode.LimitSwitch;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,7 +33,7 @@ public class SlidesTesters extends LinearOpMode {
     //Hardwarre initializations
     boolean debug = false;
     Limelight3A limelight;
-    DcMotor fl,fr,br,bl, oSlideRight, oSlideLeft, islide;
+    DcMotor fl,fr,br,bl, oSlideRight, oSlideLeft, islide, enc_left;
     ServoImplEx outakeArm, outakeBox, claw, base, wrist, joint ;
     IMU imu;
     RevBlinkinLedDriver leds;
@@ -58,12 +61,14 @@ public class SlidesTesters extends LinearOpMode {
     TransferStates transferState = TransferStates.ELSEWHERE;
     DrivingStates drivingState = DrivingStates.FULL_SPEED_MANUAL;
     SubAssemblyStates subState = SubAssemblyStates.INTAKE;
+    Deadwheel leftX, middle, rightX;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
         //more hardware init
         //Chassis Motors
+        enc_left = hardwareMap.get(DcMotor.class, "enc_left");
         fl = hardwareMap.get(DcMotor.class, "FL");
         bl = hardwareMap.get(DcMotor.class, "BL");
         br = hardwareMap.get(DcMotor.class, "BR");
@@ -73,8 +78,9 @@ public class SlidesTesters extends LinearOpMode {
         outakeArm = hardwareMap.get(ServoImplEx.class, "outtakeArm");
         outakeBox = hardwareMap.get(ServoImplEx.class, "outtakeBox");
 
-        /*
+
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        /*
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking
         limelight.pipelineSwitch(2); // Switch to pipeline number 2
@@ -119,6 +125,9 @@ public class SlidesTesters extends LinearOpMode {
         iLSLeft = new LimitSwitch(intakeLeft);
         iLSRight = new LimitSwitch(intakeRight);
 
+        leftX = new Deadwheel(enc_left);
+        rightX = new Deadwheel(br);
+        middle = new Deadwheel(oSlideLeft);
 
         //Bulk caching setup
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
@@ -132,7 +141,9 @@ public class SlidesTesters extends LinearOpMode {
         br.setDirection(DcMotorSimple.Direction.REVERSE);
         fl.setDirection(DcMotorSimple.Direction.REVERSE);
 
-
+        leftX.reset();
+        middle.reset();
+        rightX.reset();
         waitForStart();
 
         while (opModeIsActive()){
@@ -172,6 +183,10 @@ public class SlidesTesters extends LinearOpMode {
             telemetry.addData("out limit Right: ", oLSRight.isPressed());
             telemetry.addData("in limit Left: ", iLSLeft.isPressed());
             telemetry.addData("in limit Right: ", iLSRight.isPressed());
+
+            telemetry.addData("l: ", leftX.getCurrentPosition());
+            telemetry.addData("perp: ", middle.getCurrentPosition());
+            telemetry.addData("r: ", rightX.getCurrentPosition());
             telemetry.update();
         }
 

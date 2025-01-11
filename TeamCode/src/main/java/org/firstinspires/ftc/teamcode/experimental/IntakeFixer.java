@@ -57,8 +57,8 @@ public class IntakeFixer extends LinearOpMode {
         wrist.setPosition(0);
         claw.setPosition(0);
 
-        outtakeBox.setPosition(0);
-        outtakeArm.setPosition(0.225);
+        outtakeBox.setPosition(0.25);
+        outtakeArm.setPosition(0.175);
 
         while(opModeIsActive()){
             telemetry.addData("base: ", base.getPosition());

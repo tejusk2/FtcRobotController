@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.experimental;
 
 import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -20,20 +20,21 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.ClawSubAssembly;
+import org.firstinspires.ftc.teamcode.Deadwheel;
+import org.firstinspires.ftc.teamcode.LimitSwitch;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@TeleOp(name="TeleOp")
-public class Tele25 extends LinearOpMode {
+@TeleOp(name="Motor Tester")
+public class MotorTester extends LinearOpMode {
     boolean open = true;
-
-    boolean intakeDocked = true;
-    boolean outtakeDocked = true;
     //Hardwarre initializations
+    boolean debug = false;
     Limelight3A limelight;
-    DcMotor fl,fr,br,bl, oSlideRight, oSlideLeft, islide;
-    ServoImplEx outtakeBox, outtakeArm, claw, base, wrist, joint ;
+    DcMotor fl,fr,br,bl, oSlideRight, oSlideLeft, islide, enc_left;
+    ServoImplEx outakeArm, outakeBox, claw, base, wrist, joint ;
     IMU imu;
     RevBlinkinLedDriver leds;
     TouchSensor left, right, intakeLeft, intakeRight;    //34.1632
@@ -60,26 +61,30 @@ public class Tele25 extends LinearOpMode {
     TransferStates transferState = TransferStates.ELSEWHERE;
     DrivingStates drivingState = DrivingStates.FULL_SPEED_MANUAL;
     SubAssemblyStates subState = SubAssemblyStates.INTAKE;
+    Deadwheel leftX, middle, rightX;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
         //more hardware init
         //Chassis Motors
+        enc_left = hardwareMap.get(DcMotor.class, "enc_left");
         fl = hardwareMap.get(DcMotor.class, "FL");
         bl = hardwareMap.get(DcMotor.class, "BL");
         br = hardwareMap.get(DcMotor.class, "BR");
         fr = hardwareMap.get(DcMotor.class, "FR");
 
         //servo config
-        outtakeArm = hardwareMap.get(ServoImplEx.class, "outtakeArm");
-        outtakeBox = hardwareMap.get(ServoImplEx.class, "outtakeBox");
+        outakeArm = hardwareMap.get(ServoImplEx.class, "outtakeArm");
+        outakeBox = hardwareMap.get(ServoImplEx.class, "outtakeBox");
 
-        try{
-            limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        }catch (Exception e){
 
-        }
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        /*
+        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+        limelight.start(); // This tells Limelight to start looking
+        limelight.pipelineSwitch(2); // Switch to pipeline number 2
+         */
 
 
         base = hardwareMap.get(ServoImplEx.class, "base");
@@ -120,6 +125,9 @@ public class Tele25 extends LinearOpMode {
         iLSLeft = new LimitSwitch(intakeLeft);
         iLSRight = new LimitSwitch(intakeRight);
 
+        leftX = new Deadwheel(enc_left);
+        rightX = new Deadwheel(br);
+        middle = new Deadwheel(oSlideLeft);
 
         //Bulk caching setup
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
@@ -133,89 +141,31 @@ public class Tele25 extends LinearOpMode {
         br.setDirection(DcMotorSimple.Direction.REVERSE);
         fl.setDirection(DcMotorSimple.Direction.REVERSE);
 
-
+        leftX.reset();
+        middle.reset();
+        rightX.reset();
         waitForStart();
-        intakeArm.setINTAKE_SCAN();
+
         while (opModeIsActive()){
             //chassis state machine
-            switch(drivingState){
-                case FULL_SPEED_MANUAL:
-                    robotCentricPlus(1.3);
-                    gp1();
-                    break;
-                case SLOW_SPEED_MANUAL:
-                    robotCentricPlus(0.4);
-
-                    gp1();
-                    break;
-            }
+            fl.setPower(gamepad1.left_trigger);
+            fr.setPower(gamepad1.right_trigger);
+            bl.setPower(-gamepad1.left_stick_y);
+            br.setPower(-gamepad1.right_stick_y);
             //Subassembly state machine
-            switch(subState){
-                case INTAKE:
-                    intakeDocked = false;
-                    if(leds!=null) {
-                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
-                    }
-                    //freeze outtake subsystems
-                    if(!outtakeDocked){
-                        slidesLimiterOutake(-1, 1000);
-                    }else{
-                        slidesLimiterOutake(0, 1000);
-                    }
-                    setOUTTAKE_ARM_TRANSFER();
-                    setOUTTAKE_TRANSFER();
-                    //run intake subsystems
-                    slidesLimiterIntake(-gamepad2.left_stick_y, 1300);
-                    intakeServos();
-                    gp2();
-                    break;
-                case OUTAKE:
-                    outtakeDocked = false;
-                    if(leds!=null) {
-                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
-                    }
-                    //freeze intake subsystems
-                    intakeArm.setINTAKE_SCAN();
-                    setOUTTAKE_ARM_UP();
-                    if(!intakeDocked) {
-                        slidesLimiterIntake(-1, 1000);
-                    }else{
-                        slidesLimiterIntake(0, 1000);
-                    }
-                    //run outtake subsystems
-                    slidesLimiterOutake(-gamepad2.left_stick_y, 1000);
-                    outakeBox();
-                    gp2();
-                    break;
-                case TRANSFER_FAILED:
-                    if(leds!=null) {
-                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
-                    }
-                    gp2();
-                    break;
-                case TRANSFER:
-                    if(leds!=null) {
-                        leds.setPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
-                    }
-                    gp2();
-                    transfer();
-                    break;
-            }
 
 
-
-
+            telemetry.addData("debug: ", debug);
             telemetry.addData("vertical slides: ", oSlideRight.getCurrentPosition());
             telemetry.addData("intake slides: ", islide.getCurrentPosition());
-            telemetry.addData("drivetrain_state: ", drivingState);
-            telemetry.addData("subassembly_state: ", subState);
-            telemetry.addData("runtime: ", getRuntime());
             telemetry.addData("out limit Left: ", oLSLeft.isPressed());
             telemetry.addData("out limit Right: ", oLSRight.isPressed());
             telemetry.addData("in limit Left: ", iLSLeft.isPressed());
             telemetry.addData("in limit Right: ", iLSRight.isPressed());
-            telemetry.addData("intake docked: ", intakeDocked());
-            telemetry.addData(" outtake docked: ", outtakeDocked());
+
+            telemetry.addData("l: ", leftX.getCurrentPosition());
+            telemetry.addData("perp: ", middle.getCurrentPosition());
+            telemetry.addData("r: ", rightX.getCurrentPosition());
             telemetry.update();
         }
 
@@ -251,19 +201,13 @@ public class Tele25 extends LinearOpMode {
         //SWITCH FROM OUTTAKE TO INTAKE
         if(subState == SubAssemblyStates.OUTAKE && gamepad2.square && getRuntime() > 0.8){
             resetRuntime();
-            islide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            islide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             subState = SubAssemblyStates.INTAKE;
-            outtakeDocked = false;
 
         }
-        //SWITCH FROM INTAKE TO OUTTAKE
+        //SWITCH TO INTAKE FROM OUTTAKE
         if(subState == SubAssemblyStates.INTAKE && gamepad2.square && getRuntime() > 0.8){
             resetRuntime();
-            oSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            oSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             subState = SubAssemblyStates.OUTAKE;
-            intakeDocked = false;
         }
         //transfer
         if(subState == SubAssemblyStates.INTAKE && gamepad2.ps && getRuntime() > 0.5){
@@ -317,19 +261,13 @@ public class Tele25 extends LinearOpMode {
         }
         //circle scan
         if(gamepad2.circle){
-            intakeArm.autoAdjust();
-        }
-        if(gamepad2.touchpad){
-            intakeArm.setINTAKE_WALL();
+
         }
         if(gamepad2.dpad_up){
             intakeArm.setINTAKE_SCAN();
         }
         if(gamepad2.dpad_down){
             intakeArm.setINTAKE_PICKUP();
-        }
-        if(gamepad2.dpad_left){
-            intakeArm.setINTAKE_WALL_UP();
         }
         if(gamepad2.right_bumper && getRuntime() > 0.3){
             resetRuntime();
@@ -339,6 +277,8 @@ public class Tele25 extends LinearOpMode {
             resetRuntime();
             wrist.setPosition(wrist.getPosition()-0.1);
         }
+        //swivel wrist
+
     }
     //Outtake box stuff
     public void outakeBox(){
@@ -362,6 +302,7 @@ public class Tele25 extends LinearOpMode {
         if ((-oSlideRight.getCurrentPosition() > upperBound && power > 0) && (outtakeDocked() && power < 0)){
             oSlideRight.setPower(0);
             oSlideLeft.setPower(0);
+
         } else {
             oSlideLeft.setPower(power);
             oSlideRight.setPower(-power);
@@ -385,20 +326,25 @@ public class Tele25 extends LinearOpMode {
                     //set the intake to transfer, wait 0.5 seconds and open claw
                     if (transferState == TransferStates.TRANSFER_READY) {
                         intakeArm.setINTAKE_TRANSFER();
-                        if (getRuntime() > 0.6) {
+                        if (getRuntime() > 0.5) {
                             intakeArm.openClaw();
                             transferState = TransferStates.SAMPLE_DROPPED;
                         }
                     }
                     //wait 0.5 more seconds
-                    if (getRuntime() > 1.6) {
+                    if (getRuntime() > 1) {
                         if (transferState == TransferStates.SAMPLE_DROPPED) {
                             //set the intake to scan
                             intakeArm.setINTAKE_SCAN();
                             //wait 0.3 seconds
                             //go to outtake mode
-                            transferState = TransferStates.ELSEWHERE;
-                            subState = SubAssemblyStates.OUTAKE;
+                            if (getRuntime() > 1.3) {
+                                setOUTTAKE_ARM_UP();
+                                setOUTTAKE_SPECIMEN();
+                                //switch to outtake mode
+                                transferState = TransferStates.ELSEWHERE;
+                                subState = SubAssemblyStates.OUTAKE;
+                            }
                         }
                     }
                 } else {
@@ -411,16 +357,18 @@ public class Tele25 extends LinearOpMode {
 
     }
     public boolean intakeDocked(){
-        if((iLSLeft.isPressed() && iLSRight.isPressed()) || islide.getCurrentPosition() <= 5){
-            intakeDocked = true;
+        if((iLSLeft.isPressed() && iLSRight.isPressed()) || islide.getCurrentPosition() <= 0){
+            islide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            islide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             return true;
         }else{
             return false;
         }
     }
     public boolean outtakeDocked(){
-        if((oLSRight.isPressed() && oLSLeft.isPressed()) || -oSlideRight.getCurrentPosition() <= 5){
-            outtakeDocked = true;
+        if((oLSRight.isPressed() && oLSLeft.isPressed()) || -oSlideRight.getCurrentPosition() <= 0){
+            oSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            oSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             return true;
         }else{
             return false;
@@ -428,22 +376,19 @@ public class Tele25 extends LinearOpMode {
     }
     //SERVO_POSES
     public void setOUTTAKE_ARM_DOWN(){
-        outtakeArm.setPosition(0);
+        outakeArm.setPosition(0);
     }
     public void setOUTTAKE_ARM_UP(){
-        outtakeArm.setPosition(1);
-    }
-    public void setOUTTAKE_ARM_TRANSFER(){
-        outtakeArm.setPosition(0.175);
+        outakeArm.setPosition(1);
     }
     public void setOUTTAKE_TRANSFER(){
-        outtakeBox.setPosition(0.25);
+        outakeBox.setPosition(0.3);
     }
     public void setOUTTAKE_SPECIMEN(){
-        outtakeBox.setPosition(0.63);
+        outakeBox.setPosition(1);
     }
     public void setOUTTAKE_DROP(){
-        outtakeBox.setPosition(0);
+        outakeBox.setPosition(0);
     }
 
 

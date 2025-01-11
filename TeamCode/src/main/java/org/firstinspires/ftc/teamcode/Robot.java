@@ -355,7 +355,7 @@ public class Robot {
     }
     public void setIntakeSlides(int reference) {
        double output = 1;
-       int k = 0;
+       double k = 0;
        ElapsedTime runTimer = new ElapsedTime();
        runTimer.reset();
        while(output > 0.05+k) {
@@ -367,14 +367,22 @@ public class Robot {
        }
     }
     public void homeIntake(){
-        while(!intakeDocked()){
+        ElapsedTime runTimer = new ElapsedTime();
+        runTimer.reset();
+        while(!intakeDocked() && runTimer.seconds() < 1.5){
             slidesLimiterIntake(-0.9, 1000);
         }
+        slidesLimiterIntake(0, 1000);
+
     }
     public void homeOuttake(){
-        while(!outtakeDocked()){
+        ElapsedTime runTimer = new ElapsedTime();
+        runTimer.reset();
+        while(!outtakeDocked() && runTimer.seconds() < 3){
             slidesLimiterOutake(-0.9, 1300);
         }
+        slidesLimiterOutake(0, 1300);
+
     }
     public void setOuttakeSlides(int reference) {
         double output = 1;
@@ -385,7 +393,7 @@ public class Robot {
             if(runTimer.seconds() > 3){break;}
             int kP = 1;
             int error = reference - -1*oSlideRight.getCurrentPosition();
-            output = ((error / 100) + k)*kP;
+            output = ((error / 10) + k)*kP;
             slidesLimiterOutake(output, 1000);
         }
 
@@ -404,12 +412,6 @@ public class Robot {
     public void transfer() {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
-        while(!intakeDocked() && timer.seconds() < 3){
-            homeIntake();
-        }
-        while(!outtakeDocked() && timer.seconds() < 3){
-            homeOuttake();
-        }
         if(intakeDocked() && outtakeDocked()){
             intakeArm.setINTAKE_TRANSFER();
             setOUTTAKE_ARM_TRANSFER();
@@ -468,17 +470,21 @@ public class Robot {
         outtakeArm.setPosition(1);
     }
     public void setOUTTAKE_ARM_TRANSFER(){
-        outtakeArm.setPosition(0.225);
+        outtakeArm.setPosition(0.175);
     }
     public void setOUTTAKE_ARM_MIDDLE(){
         outtakeArm.setPosition(0.4);
     }
     public void setOUTTAKE_TRANSFER(){
-        outtakeBox.setPosition(0.025);
+        outtakeBox.setPosition(0.25);
     }
     public void setOUTTAKE_SPECIMEN(){
-        outtakeBox.setPosition(1);
+        outtakeBox.setPosition(0.63);
     }
+    public void setOUTTAKE_ARM_UP_LOWERED(){
+        outtakeArm.setPosition(0.87);
+    }
+
     public void setOUTTAKE_DROP(){
         outtakeBox.setPosition(0);
     }
